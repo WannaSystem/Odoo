@@ -3,5 +3,5 @@
 from . import product_template
 from . import inventory_adjustment
 from . import sale_order
-from . import sale_move
-from . import sale_scrap
+from . import stock_move
+from . import stock_scrap

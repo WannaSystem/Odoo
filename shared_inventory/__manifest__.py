@@ -1,7 +1,7 @@
  
 # -*- coding: utf-8 -*-
 {
-    'name': "sub_products",
+    'name': "shared_inventory",
 
     'summary': """
         In Odoo, there are 4 different products with the same SKU, but I can buy and sell any part number, 
