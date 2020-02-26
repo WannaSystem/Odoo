@@ -17,11 +17,25 @@ class ProductTemplate(models.Model):
             virtual_available = 0
             incoming_qty = 0
             outgoing_qty = 0
+
+            if template.sku_id:
+                qty_available = template.sku_id["qty_available"]
+                virtual_available = template.sku_id["virtual_available"]
+                incoming_qty = template.sku_id["incoming_qty"]
+                outgoing_qty = template.sku_id["outgoing_qty"]
+
             for p in template.product_variant_ids:
                 qty_available += variants_available[p.id]["qty_available"]
                 virtual_available += variants_available[p.id]["virtual_available"]
                 incoming_qty += variants_available[p.id]["incoming_qty"]
                 outgoing_qty += variants_available[p.id]["outgoing_qty"]
+
+            for p in template.sub_product_ids:
+                qty_available += variants_available[p.id]["qty_available"]
+                virtual_available += variants_available[p.id]["virtual_available"]
+                incoming_qty += variants_available[p.id]["incoming_qty"]
+                outgoing_qty += variants_available[p.id]["outgoing_qty"]
+            
             prod_available[template.id] = {
                 "qty_available": qty_available,
                 "virtual_available": virtual_available,
