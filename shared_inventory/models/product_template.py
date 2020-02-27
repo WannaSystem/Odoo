@@ -12,7 +12,7 @@ class ProductTemplate(models.Model):
         for s in self:
             return s._compute_quantities_dict[s.id]['qty_available']
 
-    on_hand = fields.Integer(string='On hand', default=_compute_on_hand, store=True)
+    on_hand = fields.Float(string='On hand', default=_compute_on_hand, store=True)
 
     def _compute_quantities_dict(self, lot_id=False, owner_id=False, package_id=False, from_date=False, to_date=False):
         # TDE FIXME: why not using directly the function fields ?
