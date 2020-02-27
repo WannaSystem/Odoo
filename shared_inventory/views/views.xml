@@ -1,35 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
-  <data>
-    <record model='ir.ui.view' id='sub_products_form_view'>    
-      <field name="name">product.template.sub_products.name</field>
-      <field name='model'>product.template</field>
-      <field name='mode'>primary</field>
-      <field name='inherit_id' ref='product.product_template_only_form_view'/>
-      <field name='arch' type='xml'>
-        <field name='product_variant_ids' position='after'>
-          <field name='sku_id'/>
-        </field>
-        <xpath expr="//page[@name='general_information']" position='after'>
-          <page string='Sub-products' name='sub_products'>
-            <field name='sub_product_ids'>
-              <tree>
-                <field name="sequence" widget="handle" readonly="1"/>
-                <field name="name"/>
-                <field name="default_code" readonly='1'/>
-                <field name="barcode" readonly='1'/>
-                <field name="company_id" options="{'no_create_edit': True}" groups="base.group_multi_company" optional="hide"/>
-                <field name="list_price" string="Sales Price" optional="show" readonly='1'/>
-                <field name="standard_price" optional="show" readonly="1"/>
-                <field name="categ_id" optional="hide" readonly='1'/>
-                <field name="type" optional="hide" readonly="1"/>
-                <field name="uom_id" readonly="1" optional="show" groups="uom.group_uom"/>
-                <field name="activity_exception_decoration" widget="activity_exception"/>
-              </tree>
-            </field>
-          </page>
-        </xpath>
+  <record model='ir.ui.view' id='sub_products_form_view'>    
+    <field name="name">product.template.sub_products.name</field>
+    <field name='model'>product.template</field>
+    <field name='mode'>primary</field>
+    <field name='inherit_id' ref='product.product_template_only_form_view'/>
+    <field name='arch' type='xml'>
+      <field name='product_variant_ids' position='after'>
+        <field name='sku_id'/>
       </field>
-    </record>
-  </data>
+      <xpath expr="//page[@name='general_information']" position='after'>
+        <page string='Sub-products' name='sub_products'>
+          <field name='sub_product_ids'>
+            <tree>
+              <field name="sequence" widget="handle" readonly="1"/>
+              <field name="name"/>
+              <field name="default_code" readonly='1'/>
+              <field name="barcode" readonly='1'/>
+              <field name="company_id" options="{'no_create_edit': True}" groups="base.group_multi_company" optional="hide"/>
+              <field name="list_price" string="Sales Price" optional="show" readonly='1'/>
+              <field name="standard_price" optional="show" readonly="1"/>
+              <field name="categ_id" optional="hide" readonly='1'/>
+              <field name="type" optional="hide" readonly="1"/>
+              <field name="uom_id" readonly="1" optional="show" groups="uom.group_uom"/>
+              <field name="activity_exception_decoration" widget="activity_exception"/>
+            </tree>
+          </field>
+        </page>
+      </xpath>
+    </field>
+  </record>
 </odoo>
