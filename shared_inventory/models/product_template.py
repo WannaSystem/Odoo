@@ -31,10 +31,10 @@ class ProductTemplate(models.Model):
                 outgoing_qty += variants_available[p.id]["outgoing_qty"]
 
             for p in template.sub_product_ids:
-                qty_available += variants_available[p.id]["qty_available"]
-                virtual_available += variants_available[p.id]["virtual_available"]
-                incoming_qty += variants_available[p.id]["incoming_qty"]
-                outgoing_qty += variants_available[p.id]["outgoing_qty"]
+                qty_available += p["qty_available"]
+                virtual_available += p["virtual_available"]
+                incoming_qty += p["incoming_qty"]
+                outgoing_qty += p["outgoing_qty"]
             
             prod_available[template.id] = {
                 "qty_available": qty_available,
