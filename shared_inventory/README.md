@@ -4,12 +4,14 @@ I have 1 product (SKU) that has 4 possible alternative Part numbers.
 In my inventory system, they are the same part and are interchangeable, 
 however on the market place I post them online to they are separate products.
 
+```
 SKU: ABC123
 
 P#1: 11111
 P#2: 22222
 P#3: 33333
 P#4: 44444
+```
 
 Inventory Value of SKU ABC123 = 10 units
 
