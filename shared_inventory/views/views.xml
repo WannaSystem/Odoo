@@ -6,7 +6,7 @@
     <field name='mode'>primary</field>
     <field name='inherit_id' ref='product.product_template_only_form_view'/>
     <field name='arch' type='xml'>
-      <field name='product_variant_ids' position='after'>
+      <field name='id' position='after'>
         <field name='sku_id'/>
       </field>
       <xpath expr="//page[@name='general_information']" position='after'>
