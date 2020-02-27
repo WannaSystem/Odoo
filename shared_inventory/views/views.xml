@@ -10,7 +10,7 @@
         <field name="sku_id"/>
       </xpath>
       <xpath expr="//page[@name='general_information']" position='after'>
-        <page string='Sub-products' name='sub_products'>
+        <page string='Sub-products' name='shared_inventory_sub_product_list'>
           <field name='sub_product_ids'>
             <tree>
               <field name="sequence" widget="handle" readonly="1"/>
