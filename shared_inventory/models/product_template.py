@@ -113,12 +113,16 @@ class ProductTemplate(models.Model):
                     'outgoing_qty': 0.0,
                     'virtual_available': 0.0
                 }
-
-            if p.sku_id:
+            if p.sku_id and p.sku_id.id in prod_available:
                 prod_available[p.id]['qty_available'] += prod_available[p.sku_id.id]['qty_available']
                 prod_available[p.id]['virtual_available'] += prod_available[p.sku_id.id]["virtual_available"]
                 prod_available[p.id]['incoming_qty'] += prod_available[p.sku_id.id]["incoming_qty"]
                 prod_available[p.id]['outgoing_qty'] += prod_available[p.sku_id.id]["outgoing_qty"]
+            elif p.sku_id:
+                prod_available[p.id]['qty_available'] += p.sku_id['qty_available']
+                prod_available[p.id]['virtual_available'] += p.sku_id["virtual_available"]
+                prod_available[p.id]['incoming_qty'] += p.sku_id["incoming_qty"]
+                prod_available[p.id]['outgoing_qty'] += p.sku_id["outgoing_qty"]
 
         # for p in prod_available:
         #     print(p, prod_available[p])
