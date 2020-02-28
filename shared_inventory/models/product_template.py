@@ -19,22 +19,22 @@ class ProductTemplate(models.Model):
         variants_available = self.mapped('product_variant_ids')._product_available()
         prod_available = {}
         for template in self:
-            qty_available = 0
-            virtual_available = 0
             incoming_qty = 0
             outgoing_qty = 0
+            qty_available = 0
+            virtual_available = 0
 
             for p in template.product_variant_ids:
-                qty_available += variants_available[p.id]['qty_available']
-                virtual_available += variants_available[p.id]['virtual_available']
                 incoming_qty += variants_available[p.id]['incoming_qty']
                 outgoing_qty += variants_available[p.id]['outgoing_qty']
+                qty_available += variants_available[p.id]['qty_available']
+                virtual_available += variants_available[p.id]['virtual_available']
             
             prod_available[template.id] = {
-                'qty_available': qty_available,
-                'virtual_available': virtual_available,
                 'incoming_qty': incoming_qty,
-                'outgoing_qty': outgoing_qty
+                'outgoing_qty': outgoing_qty,
+                'qty_available': qty_available,
+                'virtual_available': virtual_available
             }
 
         domain_quant = []
@@ -78,11 +78,10 @@ class ProductTemplate(models.Model):
             rounding = product.uom_id.rounding
             if not (product_id in prod_available):
                 prod_available[product_id] = {
-                    'qty_available': 0.0,
                     'incoming_qty': 0.0,
                     'outgoing_qty': 0.0,
-                    'virtual_available': 0.0,
-                    'pulled': []
+                    'qty_available': 0.0,
+                    'virtual_available': 0.0
                 }
             if dates_in_the_past:
                 qty_available = quants_res.get(product_id, 0.0) - moves_in_res_past.get(product_id, 0.0) + moves_out_res_past.get(product_id, 0.0)
@@ -103,7 +102,7 @@ class ProductTemplate(models.Model):
         for temp in self:
             sku = temp.sku_id if temp.sku_id else temp
 
-            counts = sku._compute_product_quantities()
+            counts = sku._compute_product_quantities(lot_id, owner_id, package_id, from_date, total_qty)
             total_qty[temp.id] = {
                 'qty_available': counts[sku.id]['qty_available'],
                 'virtual_available': counts[sku.id]['virtual_available'],
@@ -112,7 +111,7 @@ class ProductTemplate(models.Model):
             }
 
             for p in sku.sub_product_ids:
-                counts = p._compute_product_quantities()
+                counts = p._compute_product_quantities(lot_id, owner_id, package_id, from_date, total_qty)
                 total_qty[temp.id]['qty_available'] += counts[p.id]['qty_available']
                 total_qty[temp.id]['virtual_available'] += counts[p.id]['virtual_available']
                 total_qty[temp.id]['incoming_qty'] += counts[p.id]['incoming_qty']
