@@ -30,7 +30,7 @@ class ProductTemplate(models.Model):
                 virtual_available += variants_available[p.id]["virtual_available"]
                 incoming_qty += variants_available[p.id]["incoming_qty"]
                 outgoing_qty += variants_available[p.id]["outgoing_qty"]
-
+            
             for p in template.sub_product_ids:
                 qty_available += p["qty_available"]
                 virtual_available += p["virtual_available"]
@@ -105,6 +105,10 @@ class ProductTemplate(models.Model):
                 qty_available + prod_available[product_id]['incoming_qty'] - prod_available[product_id]['outgoing_qty'],
                 precision_rounding=rounding)
 
+        # for p in prod_available:
+        #     print(p, prod_available[p])
+        # print()
+
         for p in self:
             if not (p.id in prod_available):
                 prod_available[p.id] = {
@@ -124,7 +128,12 @@ class ProductTemplate(models.Model):
                 prod_available[p.id]['incoming_qty'] += p.sku_id["incoming_qty"]
                 prod_available[p.id]['outgoing_qty'] += p.sku_id["outgoing_qty"]
 
-        # for p in prod_available:
-        #     print(p, prod_available[p])
-        # print()
+        for s in self:
+            for p in s.sub_product_ids:
+                if p.id in prod_available:
+                    prod_available[s.id]['qty_available'] += prod_available[p.id]["qty_available"]
+                    prod_available[s.id]['virtual_available'] += prod_available[p.id]["virtual_available"]
+                    prod_available[s.id]['incoming_qty'] += prod_available[p.id]["incoming_qty"]
+                    prod_available[s.id]['outgoing_qty'] += prod_available[p.id]["outgoing_qty"]
+
         return prod_available
