@@ -23,7 +23,6 @@
               <field name="categ_id" optional="hide" readonly='1'/>
               <field name="type" optional="hide" readonly="1"/>
               <field name="uom_id" readonly="1" optional="show" groups="uom.group_uom"/>
-              <field name="activity_exception_decoration" widget="activity_exception"/>
             </tree>
           </field>
         </page>
