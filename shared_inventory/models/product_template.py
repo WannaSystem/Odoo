@@ -102,7 +102,7 @@ class ProductTemplate(models.Model):
         for temp in self:
             sku = temp.sku_id if temp.sku_id else temp
 
-            counts = sku._compute_product_quantities(lot_id, owner_id, package_id, from_date, total_qty)
+            counts = sku._compute_product_quantities(lot_id, owner_id, package_id, from_date, to_date)
             total_qty[temp.id] = {
                 'qty_available': counts[sku.id]['qty_available'],
                 'virtual_available': counts[sku.id]['virtual_available'],
@@ -111,7 +111,7 @@ class ProductTemplate(models.Model):
             }
 
             for p in sku.sub_product_ids:
-                counts = p._compute_product_quantities(lot_id, owner_id, package_id, from_date, total_qty)
+                counts = p._compute_product_quantities(lot_id, owner_id, package_id, from_date, to_date)
                 total_qty[temp.id]['qty_available'] += counts[p.id]['qty_available']
                 total_qty[temp.id]['virtual_available'] += counts[p.id]['virtual_available']
                 total_qty[temp.id]['incoming_qty'] += counts[p.id]['incoming_qty']
