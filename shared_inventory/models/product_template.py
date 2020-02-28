@@ -24,7 +24,6 @@ class ProductTemplate(models.Model):
             virtual_available = 0
             incoming_qty = 0
             outgoing_qty = 0
-            pulled = []
 
             for p in template.product_variant_ids:
                 qty_available += variants_available[p.id]['qty_available']
@@ -32,25 +31,13 @@ class ProductTemplate(models.Model):
                 incoming_qty += variants_available[p.id]['incoming_qty']
                 outgoing_qty += variants_available[p.id]['outgoing_qty']
             
-            for p in template.sub_product_ids:
-                qty_available += p['qty_available']
-                virtual_available += p['virtual_available']
-                incoming_qty += p['incoming_qty']
-                outgoing_qty += p['outgoing_qty']
-                if qty_available > 0:
-                    pulled.append(p.id)
-            
             prod_available[template.id] = {
                 'qty_available': qty_available,
                 'virtual_available': virtual_available,
                 'incoming_qty': incoming_qty,
                 'outgoing_qty': outgoing_qty,
-                'pulled': pulled
+                'pulled': []
             }
-        
-        # for p in prod_available:
-        #     print(p, prod_available[p])
-        # print()
 
         domain_quant = []
         domain_move_in = []
@@ -110,27 +97,107 @@ class ProductTemplate(models.Model):
                 qty_available + prod_available[product_id]['incoming_qty'] - prod_available[product_id]['outgoing_qty'],
                 precision_rounding=rounding)
 
-        # for p in prod_available:
-        #     print(p, prod_available[p])
-        # print()
-
+        original_values = {}
+        for p in prod_available:
+            original_values[p] = {
+                'qty_available': prod_available[p]['qty_available'],
+                'incoming_qty': prod_available[p]['incoming_qty'],
+                'outgoing_qty': prod_available[p]['outgoing_qty'],
+                'virtual_available': prod_available[p]['virtual_available']
+            }    
+        
         for p in self:
-            if not (p.id in prod_available):
+            if not (p.id in original_values):
+                original_values[p.id] = {
+                    'qty_available': p['qty_available'],
+                    'incoming_qty': p['incoming_qty'],
+                    'outgoing_qty': p['outgoing_qty'],
+                    'virtual_available': p['virtual_available']
+                }
                 prod_available[p.id] = {
-                    'qty_available': 0.0,
-                    'incoming_qty': 0.0,
-                    'outgoing_qty': 0.0,
-                    'virtual_available': 0.0,
+                    'qty_available': original_values[p.id]['qty_available'],
+                    'incoming_qty': original_values[p.id]['incoming_qty'],
+                    'outgoing_qty': original_values[p.id]['outgoing_qty'],
+                    'virtual_available': original_values[p.id]['virtual_available'],
                     'pulled': []
                 }
-            if p.sku_id and p.sku_id.id in prod_available:
-                prod_available[p.id]['qty_available'] += prod_available[p.sku_id.id]['qty_available']
-                prod_available[p.id]['virtual_available'] += prod_available[p.sku_id.id]['virtual_available']
-                prod_available[p.id]['incoming_qty'] += prod_available[p.sku_id.id]['incoming_qty']
-                prod_available[p.id]['outgoing_qty'] += prod_available[p.sku_id.id]['outgoing_qty']
+            
+            if p.sku_id and not (p.sku_id.id in original_values):
+                original_values[p.sku_id.id] = {
+                    'qty_available': p.sku_id['qty_available'],
+                    'incoming_qty': p.sku_id['incoming_qty'],
+                    'outgoing_qty': p.sku_id['outgoing_qty'],
+                    'virtual_available': p.sku_id['virtual_available']
+                }
+                prod_available[p.sku_id.id] = {
+                    'qty_available': original_values[p.sku_id.id]['qty_available'],
+                    'incoming_qty': original_values[p.sku_id.id]['incoming_qty'],
+                    'outgoing_qty': original_values[p.sku_id.id]['outgoing_qty'],
+                    'virtual_available': original_values[p.sku_id.id]['virtual_available'],
+                    'pulled': []
+                }
+
+                for s in p.sku_id.sub_product_ids:
+                    if not (s.id in original_values):
+                        original_values[s.id] = {
+                            'qty_available': s['qty_available'],
+                            'incoming_qty': s['incoming_qty'],
+                            'outgoing_qty': s['outgoing_qty'],
+                            'virtual_available': s['virtual_available']
+                        }
+                        prod_available[s.id] = {
+                            'qty_available': original_values[s.id]['qty_available'],
+                            'incoming_qty': original_values[s.id]['incoming_qty'],
+                            'outgoing_qty': original_values[s.id]['outgoing_qty'],
+                            'virtual_available': original_values[s.id]['virtual_available'],
+                            'pulled': []
+                        }
+        
+        for p in prod_available:
+            print('init original_values:', p, prod_available[p])
+        print()
+
+        for s in self:
+            for p in s.sub_product_ids:
+                if not (p.id in prod_available):
+                    original_values[p.id] = {
+                        'qty_available': p['qty_available'],
+                        'incoming_qty': p['incoming_qty'],
+                        'outgoing_qty': p['outgoing_qty'],
+                        'virtual_available': p['virtual_available']
+                    }
+                    prod_available[p.id] = {
+                        'qty_available': original_values[p.id]['qty_available'],
+                        'incoming_qty': original_values[p.id]['incoming_qty'],
+                        'outgoing_qty': original_values[p.id]['outgoing_qty'],
+                        'virtual_available': original_values[p.id]['virtual_available'],
+                        'pulled': []
+                    }
+
+                if p.id in original_values and not (s.id in prod_available[p.id]['pulled']):
+                    prod_available[s.id]['qty_available'] += original_values[p.id]['qty_available']
+                    prod_available[s.id]['virtual_available'] += original_values[p.id]['virtual_available']
+                    prod_available[s.id]['incoming_qty'] += original_values[p.id]['incoming_qty']
+                    prod_available[s.id]['outgoing_qty'] += original_values[p.id]['outgoing_qty']
+                    if original_values[p.id]['qty_available'] > 0:
+                        prod_available[s.id]['pulled'].append(p.id)
+
+        for p in prod_available:
+            print('after sub_products:', p, prod_available[p])
+        print()
+
+        for p in self:
+            # TODO: all view works, but clicking into the form for each one only shows the number for SKU,
+            # so need to add sub products original values to prod available without messing up anything else
+            if p.sku_id and p.sku_id.id in original_values:
+                prod_available[p.id]['qty_available'] = prod_available[p.sku_id.id]['qty_available']
+                prod_available[p.id]['virtual_available'] = prod_available[p.sku_id.id]['virtual_available']
+                prod_available[p.id]['incoming_qty'] = prod_available[p.sku_id.id]['incoming_qty']
+                prod_available[p.id]['outgoing_qty'] = prod_available[p.sku_id.id]['outgoing_qty']
                 if prod_available[p.sku_id.id]['qty_available'] > 0:
                     prod_available[p.id]['pulled'].append(p.sku_id.id)
-            elif p.sku_id:
+
+            elif p.sku_id.id in prod_available and not (p.id in prod_available[p.sku_id.id]['pulled']):
                 prod_available[p.id]['qty_available'] += p.sku_id['qty_available']
                 prod_available[p.id]['virtual_available'] += p.sku_id['virtual_available']
                 prod_available[p.id]['incoming_qty'] += p.sku_id['incoming_qty']
@@ -138,12 +205,8 @@ class ProductTemplate(models.Model):
                 if p.sku_id['qty_available'] > 0:
                     prod_available[p.id]['pulled'].append(p.sku_id.id)
 
-        for s in self:
-            for p in s.sub_product_ids:
-                if p.id in prod_available and not (s.id in prod_available[p.id]['pulled']):
-                    prod_available[s.id]['qty_available'] += prod_available[p.id]['qty_available']
-                    prod_available[s.id]['virtual_available'] += prod_available[p.id]['virtual_available']
-                    prod_available[s.id]['incoming_qty'] += prod_available[p.id]['incoming_qty']
-                    prod_available[s.id]['outgoing_qty'] += prod_available[p.id]['outgoing_qty']
+        for p in prod_available:
+            print('after sku_id:', p, prod_available[p])
+        print()
 
         return prod_available
