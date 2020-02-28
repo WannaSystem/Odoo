@@ -8,14 +8,15 @@ class ProductTemplate(models.Model):
     sku_id = fields.Many2one(string='SKU', comodel_name='product.template', ondelete='cascade')
     sub_product_ids = fields.One2many(string='Sub-products', comodel_name='product.template', inverse_name='sku_id', ondelete='cascade')
 
+    on_hand = fields.Float(string='On hand', compute='_compute_on_hand')
+
+    @api.depends('qty_available')
     def _compute_on_hand(self):
         for s in self:
-            return s._compute_quantities_dict[s.id]['qty_available']
-
-    on_hand = fields.Float(string='On hand', default=_compute_on_hand, store=True)
+            s['on_hand'] = s['qty_available']
 
     def _compute_quantities_dict(self, lot_id=False, owner_id=False, package_id=False, from_date=False, to_date=False):
-        # TDE FIXME: why not using directly the function fields ?
+
         variants_available = self.mapped('product_variant_ids')._product_available()
         prod_available = {}
         for template in self:
@@ -23,12 +24,6 @@ class ProductTemplate(models.Model):
             virtual_available = 0
             incoming_qty = 0
             outgoing_qty = 0
-
-            if template.sku_id:
-                qty_available = template.sku_id["qty_available"]
-                virtual_available = template.sku_id["virtual_available"]
-                incoming_qty = template.sku_id["incoming_qty"]
-                outgoing_qty = template.sku_id["outgoing_qty"]
 
             for p in template.product_variant_ids:
                 qty_available += variants_available[p.id]["qty_available"]
@@ -48,17 +43,15 @@ class ProductTemplate(models.Model):
                 "incoming_qty": incoming_qty,
                 "outgoing_qty": outgoing_qty,
             }
+        
+        # for p in prod_available:
+        #     print(p, prod_available[p])
+        # print()
 
-        domain_quant_loc, domain_move_in_loc, domain_move_out_loc = self._get_domain_locations()
-        domain_quant = [('product_id', 'in', self.ids)] + domain_quant_loc
+        domain_quant = []
+        domain_move_in = []
+        domain_move_out = []
         dates_in_the_past = False
-        # only to_date as to_date will correspond to qty_available
-        to_date = fields.Datetime.to_datetime(to_date)
-        if to_date and to_date < fields.Datetime.now():
-            dates_in_the_past = True
-
-        domain_move_in = [('product_id', 'in', self.ids)] + domain_move_in_loc
-        domain_move_out = [('product_id', 'in', self.ids)] + domain_move_out_loc
         if lot_id is not None:
             domain_quant += [('lot_id', '=', lot_id)]
         if owner_id is not None:
@@ -94,7 +87,13 @@ class ProductTemplate(models.Model):
         for product in self.with_context(prefetch_fields=False):
             product_id = product.id
             rounding = product.uom_id.rounding
-            prod_available[product_id] = {}
+            if not (product_id in prod_available):
+                prod_available[product_id] = {
+                    'qty_available': 0.0,
+                    'incoming_qty': 0.0,
+                    'outgoing_qty': 0.0,
+                    'virtual_available': 0.0
+                }
             if dates_in_the_past:
                 qty_available = quants_res.get(product_id, 0.0) - moves_in_res_past.get(product_id, 0.0) + moves_out_res_past.get(product_id, 0.0)
             else:
@@ -106,4 +105,22 @@ class ProductTemplate(models.Model):
                 qty_available + prod_available[product_id]['incoming_qty'] - prod_available[product_id]['outgoing_qty'],
                 precision_rounding=rounding)
 
+        for p in self:
+            if not (p.id in prod_available):
+                prod_available[p.id] = {
+                    'qty_available': 0.0,
+                    'incoming_qty': 0.0,
+                    'outgoing_qty': 0.0,
+                    'virtual_available': 0.0
+                }
+
+            if p.sku_id:
+                prod_available[p.id]['qty_available'] += prod_available[p.sku_id.id]['qty_available']
+                prod_available[p.id]['virtual_available'] += prod_available[p.sku_id.id]["virtual_available"]
+                prod_available[p.id]['incoming_qty'] += prod_available[p.sku_id.id]["incoming_qty"]
+                prod_available[p.id]['outgoing_qty'] += prod_available[p.sku_id.id]["outgoing_qty"]
+
+        # for p in prod_available:
+        #     print(p, prod_available[p])
+        # print()
         return prod_available
