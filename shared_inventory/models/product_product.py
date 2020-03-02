@@ -2,8 +2,8 @@
 from odoo import api, models, fields
 from odoo.tools.float_utils import float_round
 
-class ProductTemplate(models.Model):
-    _inherit = 'product.template'
+class ProductProduct(models.Model):
+    _inherit = 'product.product'
 
     def _compute_quantities_dict(self, lot_id=False, owner_id=False, package_id=False, from_date=False, to_date=False):
         total_qty = {}
