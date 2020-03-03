@@ -2,10 +2,65 @@
 from itertools import groupby
 from operator import itemgetter
 from odoo import api, models, fields
+from odoo.exceptions import UserError
 from odoo.tools.float_utils import float_compare, float_round, float_is_zero
 
 class StockMove(models.Model):
     _inherit = 'stock.move'
+
+    def _update_reserved_quantity(self, need, available_quantity, location_id, lot_id=None, package_id=None, owner_id=None, strict=True):
+        """ Create or update move lines.
+        """
+        self.ensure_one()
+
+        if not lot_id:
+            lot_id = self.env['stock.production.lot']
+        if not package_id:
+            package_id = self.env['stock.quant.package']
+        if not owner_id:
+            owner_id = self.env['res.partner']
+
+        taken_quantity = min(available_quantity, need)
+        # `taken_quantity` is in the quants unit of measure. There's a possibility that the move's
+        # unit of measure won't be respected if we blindly reserve this quantity, a common usecase
+        # is if the move's unit of measure's rounding does not allow fractional reservation. We chose
+        # to convert `taken_quantity` to the move's unit of measure with a down rounding method and
+        # then get it back in the quants unit of measure with an half-up rounding_method. This
+        # way, we'll never reserve more than allowed. We do not apply this logic if
+        # `available_quantity` is brought by a chained move line. In this case, `_prepare_move_line_vals`
+        # will take care of changing the UOM to the UOM of the product.
+        if not strict:
+            taken_quantity_move_uom = self.product_id.uom_id._compute_quantity(taken_quantity, self.product_uom, rounding_method='DOWN')
+            taken_quantity = self.product_uom._compute_quantity(taken_quantity_move_uom, self.product_id.uom_id, rounding_method='HALF-UP')
+
+        quants = []
+
+        if self.product_id.tracking == 'serial':
+            rounding = self.env['decimal.precision'].precision_get('Product Unit of Measure')
+            if float_compare(taken_quantity, int(taken_quantity), precision_digits=rounding) != 0:
+                taken_quantity = 0
+
+        try:
+            if not float_is_zero(taken_quantity, precision_rounding=self.product_id.uom_id.rounding):
+                quants = self.env['stock.quant']._update_reserved_quantity(
+                    self.product_id, location_id, taken_quantity, lot_id=lot_id,
+                    package_id=package_id, owner_id=owner_id, strict=strict
+                )
+        except UserError:
+            taken_quantity = 0
+
+        # Find a candidate move line to update or create a new one.
+        for reserved_quant, quantity in quants:
+            to_update = self.move_line_ids.filtered(lambda ml: ml._reservation_is_updatable(quantity, reserved_quant))
+            if to_update:
+                to_update[0].with_context(bypass_reservation_update=True).product_uom_qty += self.product_id.uom_id._compute_quantity(quantity, to_update[0].product_uom_id, rounding_method='HALF-UP')
+            else:
+                if self.product_id.tracking == 'serial':
+                    for i in range(0, int(quantity)):
+                        self.env['stock.move.line'].create(self._prepare_move_line_vals(quantity=1, reserved_quant=reserved_quant))
+                else:
+                    self.env['stock.move.line'].create(self._prepare_move_line_vals(quantity=quantity, reserved_quant=reserved_quant))
+        return taken_quantity
 
     def _action_assign(self):
 
@@ -51,11 +106,15 @@ class StockMove(models.Model):
                         continue
                     # Reserve new quants and create move lines accordingly.
                     forced_package_id = move.package_level_id.package_id or None
+                    
                     sku = move.product_id.product_tmpl_id.sku_id if move.product_id.product_tmpl_id.sku_id else move.product_id.product_tmpl_id
                     available_quantity = sku['qty_available']
+                    print('first check: ', sku, available_quantity)
+                    
                     if available_quantity <= 0:
                         continue
                     taken_quantity = move._update_reserved_quantity(need, available_quantity, move.location_id, package_id=forced_package_id, strict=False)
+                    print('taken quantity: ', taken_quantity)
                     if float_is_zero(taken_quantity, precision_rounding=rounding):
                         continue
                     if float_compare(need, taken_quantity, precision_rounding=rounding) == 0:
@@ -117,10 +176,11 @@ class StockMove(models.Model):
                         # partially `quantity`. When this happens, we chose to reserve the maximum
                         # still available. This situation could not happen on MTS move, because in
                         # this case `quantity` is directly the quantity on the quants themselves.
+                        
                         sku = move.product_id.product_tmpl_id.sku_id if move.product_id.product_tmpl_id.sku_id else move.product_id.product_tmpl_id
                         available_quantity = sku['qty_available']
-                        # available_quantity = self.env['stock.quant']._get_available_quantity(
-                        #     move.product_id, location_id, lot_id=lot_id, package_id=package_id, owner_id=owner_id, strict=True)
+                        print('second check: ', sku, available_quantity)
+                        
                         if float_is_zero(available_quantity, precision_rounding=rounding):
                             continue
                         taken_quantity = move._update_reserved_quantity(need, min(quantity, available_quantity), location_id, lot_id, package_id, owner_id)
