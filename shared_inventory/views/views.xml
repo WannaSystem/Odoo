@@ -7,38 +7,8 @@
     <field name='inherit_id' ref='product.product_template_only_form_view'/>
     <field name='arch' type='xml'>
       <xpath expr="//field[@name='barcode']" position="after">
-        <field name="sku_id"/>
+        <field name="tag_ids" widget="many2many_tags" options="{'color_field': 'color'}"/>
       </xpath>
-      <xpath expr="//page[@name='general_information']" position='after'>
-        <page string='Sub-products' name='shared_inventory_sub_product_list'>
-          <field name='sub_product_ids'>
-            <tree>
-              <field name="sequence" widget="handle" readonly="1"/>
-              <field name="name"/>
-              <field name="default_code" readonly='1'/>
-              <field name="barcode" readonly='1'/>
-              <field name="company_id" options="{'no_create_edit': True}" groups="base.group_multi_company" optional="hide"/>
-              <field name="list_price" string="Sales Price" optional="show" readonly='1'/>
-              <field name="standard_price" optional="show" readonly="1"/>
-              <field name="categ_id" optional="hide" readonly='1'/>
-              <field name="type" optional="hide" readonly="1"/>
-              <field name="uom_id" readonly="1" optional="show" groups="uom.group_uom"/>
-            </tree>
-          </field>
-        </page>
-      </xpath>
-    </field>
-  </record>
-
-  <record model='ir.ui.view' id='product_template_kanban_on_hand_extension'>
-    <field name='name'>product.template.on_hand.kanban.name</field>
-    <field name='model'>product.template</field>
-    <field name='mode'>extension</field>
-    <field name='inherit_id' ref='stock.product_template_kanban_stock_view'/>
-    <field name='arch' type='xml'>
-      <field name='qty_available' position='replace'>
-        <field name="on_hand"/>
-      </field>
     </field>
   </record>
 </odoo>
