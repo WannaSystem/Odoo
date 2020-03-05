@@ -8,7 +8,7 @@ class ProductTemplate(models.Model):
 
     @api.model
     def _name_search(self, name, args=None, operator='ilike', limit=100, name_get_uid=None):
-        print(name, args, operator, limit, name_get_uid)
+        # print(name, args, operator, limit, name_get_uid)
         return super(ProductTemplate, self)._name_search(
             name=name, args=[('internal_ref_ids.name', 'in', name)],
             operator=operator, limit=limit, name_get_uid=name_get_uid)
