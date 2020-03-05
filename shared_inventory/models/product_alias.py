@@ -6,7 +6,7 @@ class ProductAlias(models.Model):
     _inherit = 'product.alias'
 
     name = fields.Char(string='Reference Number', required=True)
-    color = fields.Integer('Color')
+    color = fields.Integer(string='Color')
 
     _sql_constraints = [
         ('name_uniq', 'unique (name)', "Reference number already exists !"),
