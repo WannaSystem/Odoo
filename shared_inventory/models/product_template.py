@@ -13,6 +13,8 @@ def find_expression(key=None, array=[]):
             n = -1
             count += 1
         if key in a:
+            if count < 0: 
+                count += 1
             result['level'] = count
             result['index'] = n+1
             result['value'] = a
@@ -43,6 +45,9 @@ def insert_expression(array=[], level=0, after=0, operator='|', expr=None):
             tree.append([a])
         else: 
             n += 1
+            if count < 0: 
+                count += 1
+                tree.append([])
             tree[count].append(a)
 
     result = []
@@ -61,28 +66,24 @@ class ProductTemplate(models.Model):
     @api.model
     def _search(self, args, offset=0, limit=None, order=None, count=False, access_rights_uid=None):
         
-        print('_search', 'product.template')
-        
         if args is None:
             args = []
         found = find_expression('default_code', args)
 
-        if found['level'] > 0:
+        if found['level'] > -1:
             args = insert_expression(args, found['level'], found['index'], '|', ['internal_ref_ids.name', 'ilike', found['value'][2]])
 
         return super(ProductTemplate, self)._search(args=args, offset=offset, order=order, count=count, access_rights_uid=access_rights_uid)
     
     @api.model
     def _name_search(self, name, args=None, operator='ilike', limit=100, name_get_uid=None):
-
-        print('_name_search', 'product.template')
         
         if args is None:
             args = []
-        
         found = find_expression('default_code', args)
-        if found['level'] > 0:
-            args = insert_expression(args, found['level'], found['index'], '|', ('internal_ref_ids.name', 'ilike', name))
+
+        if found['level'] > -1:
+            args = insert_expression(args, found['level'], found['index'], '|', ['internal_ref_ids.name', 'ilike', name])
 
         return super(ProductTemplate, self)._name_search(
             name=name, args=args,
@@ -95,28 +96,25 @@ class ProductProduct(models.Model):
     
     @api.model
     def _search(self, args, offset=0, limit=None, order=None, count=False, access_rights_uid=None):
-        print('_search', 'product.product')
         
         if args is None:
             args = []
-
         found = find_expression('default_code', args)
-        if found['level'] > 0:
-            args = insert_expression(args, found['level'], found['index'], '|', ('internal_ref_ids.name', 'ilike', found['value'][2]))
+
+        if found['level'] > -1:
+            args = insert_expression(args, found['level'], found['index'], '|', ['internal_ref_ids.name', 'ilike', found['value'][2]])
 
         return super(ProductProduct, self)._search(args=args, offset=offset, order=order, count=count, access_rights_uid=access_rights_uid)
     
     @api.model
     def _name_search(self, name, args=None, operator='ilike', limit=100, name_get_uid=None):
-
-        print('_name_search', 'product.product')
         
         if args is None:
             args = []
-
         found = find_expression('default_code', args)
-        if found['level'] > 0:
-            args = insert_expression(args, found['level'], found['index'], '|', ('internal_ref_ids.name', 'ilike', name))
+
+        if found['level'] > -1:
+            args = insert_expression(args, found['level'], found['index'], '|', ['internal_ref_ids.name', 'ilike', name])
 
         return super(ProductProduct, self)._name_search(
             name=name, args=args,
