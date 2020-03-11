@@ -1,72 +1,23 @@
 # -*- coding: utf-8 -*-
+
+import collections
+from . import helpers
+from collections import defaultdict, MutableMapping, OrderedDict
+
 from odoo import api, models, fields
 
-def find_expression(key=None, array=[]):
-    result = { 'level': -1, 'index': -1, 'value': None }
-    if key is None: 
-        return result
+export_helper = helpers.export_helper
+find_expression = helpers.find_expression
+insert_expression = helpers.insert_expression
 
-    n = -1
-    count = -1
-    for a in array:
-        if '&' in a or '|' in a:
-            n = -1
-            count += 1
-        if key in a:
-            if count < 0: 
-                count += 1
-            result['level'] = count
-            result['index'] = n+1
-            result['value'] = a
-            return result
-        else: 
-            n += 1
+class StockMove(models.Model):
+    _inherit = 'stock.move'
 
-    return result
-
-def insert_expression(array=[], level=0, after=0, operator='|', expr=None):
-        
-    result = []
-    if len(array) == 0:
-        result.append(expr)
-        return result
-    
-    n = -1
-    count = -1
-    tree = []
-
-    inserted = False
-    for a in array:
-        if count == level and n == after: 
-            tree.insert(count-n, [operator])
-            
-            count += 1
-            tree[count].insert(n+1, expr)
-            
-            n += 2
-            tree[count].append(a)
-            inserted = True
-        elif '&' in a or '|' in a:
-            n = -1
-            count += 1
-            tree.append([a])
-        else: 
-            n += 1
-            if count < 0: 
-                count += 1
-                tree.append([])
-            tree[count].append(a)
-    
-    if not inserted: 
-        tree.insert(level-after, [operator])
-        tree[level+1].insert(after+1, expr)
-
-    for t in tree:
-        for e in t:
-            result.append(e)
-    
-    return result
-
+    @api.model
+    def _export_rows(self, fields, *, _is_toplevel_call=True):
+        quants = export_helper(self=self, fields=fields, BaseModel=models.BaseModel, collections=collections, _is_toplevel_call=_is_toplevel_call)
+        [print(q) for q in quants]
+        return quants
 
 class StockMoveLine(models.Model):
     _inherit = 'stock.move.line'
@@ -98,6 +49,11 @@ class StockMoveLine(models.Model):
             args = insert_expression(args, found['level'], found['index'], '|', ['product_id.internal_ref_ids.name', 'ilike', name])
 
         return super(StockMoveLine, self)._name_search(name=name, args=args, operator=operator, limit=limit, name_get_uid=name_get_uid)
+
+    @api.model
+    def _export_rows(self, fields, *, _is_toplevel_call=True):
+        lines = export_helper(self=self, fields=fields, BaseModel=models.BaseModel, collections=collections, _is_toplevel_call=_is_toplevel_call)
+        return lines
 
 class ProductTemplate(models.Model):
     _inherit = 'product.template'
