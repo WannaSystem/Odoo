@@ -10,6 +10,14 @@ export_helper = helpers.export_helper
 find_expression = helpers.find_expression
 insert_expression = helpers.insert_expression
 
+class StockQuant(models.Model):
+    _inherit = 'stock.quant'
+
+    @api.model
+    def _export_rows(self, fields, *, _is_toplevel_call=True):
+        quants = export_helper(self=self, fields=fields, BaseModel=models.BaseModel, collections=collections, _is_toplevel_call=_is_toplevel_call)
+        return quants
+
 class StockMove(models.Model):
     _inherit = 'stock.move'
 
