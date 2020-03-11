@@ -16,7 +16,6 @@ class StockMove(models.Model):
     @api.model
     def _export_rows(self, fields, *, _is_toplevel_call=True):
         quants = export_helper(self=self, fields=fields, BaseModel=models.BaseModel, collections=collections, _is_toplevel_call=_is_toplevel_call)
-        [print(q) for q in quants]
         return quants
 
 class StockMoveLine(models.Model):
