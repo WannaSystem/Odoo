@@ -146,16 +146,14 @@ def export_helper(self, fields, BaseModel, collections, _is_toplevel_call=True):
                     # 'display_name' where no subfield is exported
                     fields2 = [(p[1:] or ['display_name'] if p and p[0] == name else [])
                                 for p in fields]
-                    
                     lines2 = value._export_rows(fields2, _is_toplevel_call=False)
-                    filtered = list(filter(lambda x: not 'display_name' in x and len(x) > 0, fields2))
 
                     if lines2:
                         # merge first line with record's main line
                         for j, val in enumerate(lines2[0]):
                             if val or isinstance(val, bool):
                                 for x in range(len(current)):
-                                    if name == 'product_id' and x > 0 and len(filtered) == 0:
+                                    if name == 'product_id' and x > 0 and 'display_name' in fields2[j]:
                                         current[x][j] = names[x-1]
                                     else:
                                         current[x][j] = val
